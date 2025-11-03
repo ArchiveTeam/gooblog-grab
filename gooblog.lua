@@ -88,6 +88,9 @@ end
 
 discover_item = function(target, item)
   if not target[item] then
+    if string.match(item, "%z") then
+      error("Should not find NULL byte.")
+    end
     if target == discovered_items then
       discovered_items_count["all"] = discovered_items_count["all"] + 1
       if not string.match(item, "%?") then
@@ -178,7 +181,8 @@ allowed = function(url, parenturl)
     or string.match(url, "^https?://www%.facebook%.com/share")
     or string.match(url, "^https?://b%.hatena%.ne%.jp/entry")
     or string.match(url, "^https?://line%.me/R/")
-    or string.match(url, "^https?://mixi%.jp/share") then
+    or string.match(url, "^https?://mixi%.jp/share")
+    or string.match(url, "^https?://blog%.goo%.ne%.jp/portal/webpush/setting") then
     return false
   end
 

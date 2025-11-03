@@ -77,7 +77,7 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251104.03'
+VERSION = '20251104.04'
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0'
 TRACKER_ID = 'gooblog'
 TRACKER_HOST = 'legacy-api.arpa.li'
