@@ -328,7 +328,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if not processed(url_)
       and not processed(url_ .. "/")
       and allowed(url_, origurl) then
-print('check', url_)
       local headers = {}
       table.insert(urls, {
         url=url_,
@@ -449,6 +448,11 @@ print('check', url_)
         or string.match(url, "/([0-9]+)$")
       if page_num and tonumber(page_num) > 100000 then
         error("Too high page number.")
+      end
+    end
+    if item_type == "e" then
+      for comment_name in string.gmatch(html, "<span class=\"comment%-name\">%s*([0-9a-zA-Z%-_]+)") do
+        discover_item(discovered_items, "commentname:" .. comment_name)
       end
     end
     local counts = nil
