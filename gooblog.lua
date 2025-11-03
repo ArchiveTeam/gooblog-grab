@@ -186,6 +186,12 @@ allowed = function(url, parenturl)
     return false
   end
 
+  if item_type == "e"
+    and string.match(url, "[%?&;]st=[01]")
+    and not context["2001"] then
+    return false
+  end
+
   local skip = false
   for pattern, type_ in pairs(item_patterns) do
     match = string.match(url, pattern)
@@ -457,6 +463,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if item_type == "e" then
       for comment_name in string.gmatch(html, "<span class=\"comment%-name\">%s*([0-9a-zA-Z%-_]+)") do
         discover_item(discovered_items, "commentname:" .. comment_name)
+      end
+      if string.match(url, "^https?://blog%.goo%.ne%.jp/[^/]+/e/[0-9a-f]+$") then
+        context["2001"] = string.match(html, "%(2001%)")
       end
     end
     local counts = nil
