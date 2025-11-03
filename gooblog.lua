@@ -442,7 +442,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     and status_code < 300
     and item_type ~= "asset" then
     html = read_file(file)
-    if item_type ~= "photo" then
+    if item_type ~= "photo" and item_type ~= "m" and item_type ~= "d" then
       local page_num = string.match(url, "[%?&;]page=([0-9]+)")
         or string.match(url, "[%?&;]p=([0-9]+)")
         or string.match(url, "/([0-9]+)$")
