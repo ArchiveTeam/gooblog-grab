@@ -77,8 +77,9 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251104.06'
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0'
+VERSION = '20251104.07'
+with open('user-agents.txt', 'r') as f:
+    USER_AGENTS = [l.strip() for l in f]
 TRACKER_ID = 'gooblog'
 TRACKER_HOST = 'legacy-api.arpa.li'
 MULTI_ITEM_SIZE = 100
@@ -254,7 +255,7 @@ class WgetArgs(object):
     def realize(self, item):
         wget_args = [
             WGET_AT,
-            '-U', USER_AGENT,
+            '-U', random.choice(USER_AGENTS).format(n=random.randint(125, 143)),
             '-nv',
             '--no-cookies',
             '--host-lookups', 'dns',
