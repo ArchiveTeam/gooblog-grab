@@ -77,7 +77,7 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251105.01'
+VERSION = '20251105.02'
 with open('user-agents.txt', 'r') as f:
     USER_AGENTS = [l.strip() for l in f]
 TRACKER_ID = 'gooblog'

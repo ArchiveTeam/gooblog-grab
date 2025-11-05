@@ -518,7 +518,10 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://blog.goo.ne.jp/api/photo_channel/get_photos?chno=" .. item_value .. "&photo_id=" .. photo_id)
     end
     if string.match(url, "/arcv/?%?")
-      and string.match(html, "<div class=\"entry%-body\">%s*<div class=\"entry%-body%-text\">%s*<aside>該当する記事はありません。<br />") then
+      and (
+        string.match(html, "<div class=\"entry%-body\">%s*<div class=\"entry%-body%-text\">%s*<aside>該当する記事はありません。<br%s*/>")
+        or string.match(html, "<div class=\"entry%-body\">%s*<div class=\"entry%-body%-text\">%s*該当する記事はありません。<br%s*/>")
+      ) then
       return urls
     end
     for newurl in string.gmatch(string.gsub(html, "&[qQ][uU][oO][tT];", '"'), '([^"]+)') do
