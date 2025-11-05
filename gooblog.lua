@@ -182,7 +182,11 @@ allowed = function(url, parenturl)
     or string.match(url, "^https?://b%.hatena%.ne%.jp/entry")
     or string.match(url, "^https?://line%.me/R/")
     or string.match(url, "^https?://mixi%.jp/share")
-    or string.match(url, "^https?://blog%.goo%.ne%.jp/portal/webpush/setting") then
+    or string.match(url, "^https?://blog%.goo%.ne%.jp/portal/webpush/setting")
+    or (
+      item_type == "m"
+      and string.match(url, "^https?://blog%.goo%.ne%.jp/[^/]+/m/[0-9]+/?[0-9]*%?st=[01]$")
+    ) then
     return false
   end
 
@@ -334,6 +338,10 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     local url_ = string.match(url, "^(.-)[%.\\]*$")
     while string.find(url_, "&amp;") do
       url_ = string.gsub(url_, "&amp;", "&")
+    end
+    if item_type == "m"
+      and string.match(url_, "%?") then
+      check(string.match(url_, "^([^%?]+)"))
     end
     if not processed(url_)
       and not processed(url_ .. "/")
