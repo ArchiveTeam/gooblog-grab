@@ -77,7 +77,7 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251106.01'
+VERSION = '20251110.01'
 with open('user-agents.txt', 'r') as f:
     USER_AGENTS = [l.strip() for l in f]
 TRACKER_ID = 'gooblog'
@@ -116,6 +116,13 @@ class CheckIP(SimpleTask):
                     'Are you behind a firewall/proxy? That is a big no-no!')
                 raise Exception(
                     'Are you behind a firewall/proxy? That is a big no-no!')
+
+            if requests.get(
+                'https://blog.goo.ne.jp/staffblog/e/0fa1124a1c46191c546de90826498b46',
+                headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15.7; rv:122.0) Gecko/20100101 Firefox/122.0'},
+                timeout=10
+            ).status_code == 403:
+                raise Exception('Looks like your IP is banned.')
 
         # Check only occasionally
         if self._counter <= 0:
