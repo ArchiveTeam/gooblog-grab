@@ -77,7 +77,7 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251111.01'
+VERSION = '20251111.02'
 with open('user-agents.txt', 'r') as f:
     USER_AGENTS = [l.strip() for l in f if 'Firefox' not in l]
 TRACKER_ID = 'gooblog'
@@ -305,7 +305,8 @@ class WgetArgs(object):
             '--warc-header', 'x-wget-at-project-name: ' + TRACKER_ID,
             '--warc-dedup-url-agnostic',
             '--warc-compression-use-zstd',
-            '--warc-zstd-dict-no-include'
+            '--warc-zstd-dict-no-include',
+            '--header', 'Accept-Language: ja-JP,ja;q=0.9'
         ]
         dict_data = ZstdDict.get_dict()
         with open(os.path.join(item['item_dir'], 'zstdict'), 'wb') as f:
