@@ -77,12 +77,22 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251110.01'
+VERSION = '20251111.01'
 with open('user-agents.txt', 'r') as f:
-    USER_AGENTS = [l.strip() for l in f]
+    USER_AGENTS = [l.strip() for l in f if 'Firefox' not in l]
 TRACKER_ID = 'gooblog'
 TRACKER_HOST = 'legacy-api.arpa.li'
 MULTI_ITEM_SIZE = 100
+
+
+def make_user_agent():
+    return random.choice(USER_AGENTS).format(
+        c1=random.randint(125, 143),
+        c2=random.randint(6420, 7500),
+        c3=random.randint(0, 200),
+        e2=random.randint(2530, 3665),
+        e3=random.randint(0, 200)
+    )
 
 
 ###########################################################################
@@ -119,7 +129,7 @@ class CheckIP(SimpleTask):
 
             if requests.get(
                 'https://blog.goo.ne.jp/staffblog/e/0fa1124a1c46191c546de90826498b46',
-                headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15.7; rv:122.0) Gecko/20100101 Firefox/122.0'},
+                headers={'User-Agent': make_user_agent()},
                 timeout=10
             ).status_code == 403:
                 raise Exception('Looks like your IP is banned.')
@@ -260,9 +270,11 @@ class ZstdDict(object):
 
 class WgetArgs(object):
     def realize(self, item):
+        user_agent = make_user_agent()
+        item.log_output('Using user-agent {}.'.format(user_agent))
         wget_args = [
             WGET_AT,
-            '-U', random.choice(USER_AGENTS).format(n=random.randint(125, 143)),
+            '-U', user_agent,
             '-nv',
             '--no-cookies',
             '--host-lookups', 'dns',
