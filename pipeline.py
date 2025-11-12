@@ -77,7 +77,7 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251111.02'
+VERSION = '20251112.01'
 with open('user-agents.txt', 'r') as f:
     USER_AGENTS = [l.strip() for l in f if 'Firefox' not in l]
 TRACKER_ID = 'gooblog'
@@ -127,11 +127,26 @@ class CheckIP(SimpleTask):
                 raise Exception(
                     'Are you behind a firewall/proxy? That is a big no-no!')
 
-            if requests.get(
-                'https://blog.goo.ne.jp/staffblog/e/0fa1124a1c46191c546de90826498b46',
-                headers={'User-Agent': make_user_agent()},
-                timeout=10
-            ).status_code == 403:
+            returned = subprocess.run(
+                [
+                    WGET_AT,
+                    '-U', make_user_agent(),
+                    '--host-lookups', 'dns',
+                    '--hosts-file', '/dev/null',
+                    '--resolvconf-file', '/dev/null',
+                    '--dns-servers', '9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10',
+                    '--output-document', '-',
+                    '--max-redirect', '0',
+                    '--timeout', '5',
+                    '--save-headers',
+                    '--no-check-certificate',
+                    '--header', 'Accept-Language: ja-JP,ja;q=0.9',
+                    'https://blog.goo.ne.jp/staffblog/e/0fa1124a1c46191c546de90826498b46'
+                ],
+                timeout=60,
+                capture_output=True
+            )
+            if b'ERROR 403' in returned.stderr:
                 raise Exception('Looks like your IP is banned.')
 
         # Check only occasionally
