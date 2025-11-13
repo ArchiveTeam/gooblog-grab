@@ -77,9 +77,20 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251112.01'
-with open('user-agents.txt', 'r') as f:
-    USER_AGENTS = [l.strip() for l in f if 'Firefox' not in l]
+VERSION = '20251113.01'
+USER_AGENTS = [
+    'Archive Team (https://wiki.archiveteam.org/; email archiveteam@archiveteam.org)',
+#    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
+#    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
+#    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
+#    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
+#    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
+#    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
+#    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
+#    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
+#    'Mozilla/5.0 (X11; Linux x86_64; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
+#    '',
+]
 TRACKER_ID = 'gooblog'
 TRACKER_HOST = 'legacy-api.arpa.li'
 MULTI_ITEM_SIZE = 100
