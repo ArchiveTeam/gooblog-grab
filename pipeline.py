@@ -78,7 +78,7 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251114.02'
+VERSION = '20251114.03'
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
@@ -105,6 +105,7 @@ BANNED_LIST = []
 with open('words_alpha.txt', 'r') as f:
     WORDS = [s.strip() for s in f]
 TRACKER_ID = 'gooblog'
+TRACKER_ID_ORIGINAL = TRACKER_ID
 TRACKER_HOST = 'legacy-api.arpa.li'
 MULTI_ITEM_SIZE = 100
 
@@ -205,6 +206,11 @@ def make_user_agent():
             return user_agent
 
 
+if make_user_agent() is None:
+    print('Switching to project gooblogassets.')
+    TRACKER_ID = 'gooblogassets'
+
+
 ###########################################################################
 # This section defines project-specific tasks.
 #
@@ -237,10 +243,10 @@ class CheckIP(SimpleTask):
                 raise Exception(
                     'Are you behind a firewall/proxy? That is a big no-no!')
 
-        user_agent = make_user_agent()
-        if user_agent is None:
-            item.log_output('Unable to find a working user-agent.')
-            raise Exception('Unable to find a working user-agent.')
+        #user_agent = make_user_agent()
+        #if user_agent is None:
+        #    item.log_output('Unable to find a working user-agent.')
+        #    raise Exception('Unable to find a working user-agent.')
 
         # Check only occasionally
         if self._counter <= 0:
@@ -352,7 +358,7 @@ class ZstdDict(object):
         response = requests.get(
             'https://legacy-api.arpa.li/dictionary',
             params={
-                'project': TRACKER_ID
+                'project': TRACKER_ID_ORIGINAL
             }
         )
         response.raise_for_status()
@@ -378,8 +384,10 @@ class ZstdDict(object):
 
 class WgetArgs(object):
     def realize(self, item):
-        user_agent = make_user_agent()
-        item.log_output('Using user-agent {}.'.format(user_agent))
+        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0'
+        if TRACKER_ID == 'gooblog':
+            user_agent = make_user_agent()
+            item.log_output('Using user-agent {}.'.format(user_agent))
         wget_args = [
             WGET_AT,
             '-U', user_agent,
@@ -414,17 +422,19 @@ class WgetArgs(object):
             '--warc-dedup-url-agnostic',
             '--warc-compression-use-zstd',
             '--warc-zstd-dict-no-include',
-            '--header', 'Accept-Language: ja-JP,ja;q=0.9',
-            *random.choice(EXTRA_WGET_ARGS)
+            '--header', 'Accept-Language: ja-JP,ja;q=0.9'
         ]
         dict_data = ZstdDict.get_dict()
         with open(os.path.join(item['item_dir'], 'zstdict'), 'wb') as f:
             f.write(dict_data['dict'])
         item['dict_id'] = dict_data['id']
-        item['dict_project'] = TRACKER_ID
+        item['dict_project'] = TRACKER_ID_ORIGINAL
         wget_args.extend([
             '--warc-zstd-dict', ItemInterpolation('%(item_dir)s/zstdict'),
         ])
+
+        if TRACKER_ID == 'gooblog':
+            wget_args.extend(random.choice(EXTRA_WGET_ARGS))
 
         if '--concurrent' in sys.argv:
             concurrency = int(sys.argv[sys.argv.index('--concurrent')+1])
@@ -481,14 +491,14 @@ project = Project(
     title=TRACKER_ID,
     project_html='''
         <img class="project-logo" alt="Project logo" src="https://wiki.archiveteam.org/images/thumb/f/f3/Archive_team.png/235px-Archive_team.png" height="50px" title=""/>
-        <h2>gooブログ <span class="links"><a href="https://blog.goo.ne.jp/">Website</a> &middot; <a href="http://tracker.archiveteam.org/gooblog/">Leaderboard</a> &middot; <a href="https://wiki.archiveteam.org/index.php/gooブログ">Wiki</a></span></h2>
+        <h2>gooブログ <span class="links"><a href="https://blog.goo.ne.jp/">Website</a> &middot; <a href="https://tracker.archiveteam.org/gooblog/">Leaderboard</a> &middot; <a href="https://wiki.archiveteam.org/index.php/gooブログ">Wiki</a></span></h2>
         <p>Archiving gooブログ.</p>
     '''
 )
 
 pipeline = Pipeline(
     CheckIP(),
-    GetItemFromTracker('http://{}/{}/multi={}/'
+    GetItemFromTracker('https://{}/{}/multi={}/'
         .format(TRACKER_HOST, TRACKER_ID, MULTI_ITEM_SIZE),
         downloader, VERSION),
     PrepareDirectories(warc_prefix=TRACKER_ID),
@@ -518,7 +528,7 @@ pipeline = Pipeline(
         name='shared:rsync_threads', title='Rsync threads',
         description='The maximum number of concurrent uploads.'),
         UploadWithTracker(
-            'http://%s/%s' % (TRACKER_HOST, TRACKER_ID),
+            'https://%s/%s' % (TRACKER_HOST, TRACKER_ID),
             downloader=downloader,
             version=VERSION,
             files=[
@@ -535,7 +545,7 @@ pipeline = Pipeline(
         ),
     ),
     MaybeSendDoneToTracker(
-        tracker_url='http://%s/%s' % (TRACKER_HOST, TRACKER_ID),
+        tracker_url='https://%s/%s' % (TRACKER_HOST, TRACKER_ID),
         stats=ItemValue('stats')
     )
 )
