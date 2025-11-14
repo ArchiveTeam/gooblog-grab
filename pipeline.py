@@ -1,6 +1,7 @@
 # encoding=utf8
 import datetime
 from distutils.version import StrictVersion
+import functools
 import hashlib
 import os
 import random
@@ -77,33 +78,131 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251113.01'
+VERSION = '20251114.01'
 USER_AGENTS = [
-    'Archive Team (https://wiki.archiveteam.org/; email archiveteam@archiveteam.org)',
-#    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
-#    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
-#    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
-#    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
-#    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
-#    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
-#    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
-#    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
-#    'Mozilla/5.0 (X11; Linux x86_64; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
-#    '',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36 Edg/{c1}.0.{e2}.{e3}',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
+    'Mozilla/5.0 (X11; Linux x86_64; rv:{c1}.0) Gecko/20100101 Firefox/{c1}.0',
+    'python-requests/2.32.5',
+    'Wget/1.21.4',
+    'curl/8.17.0',
+    'GoogleBot',
+    '',
 ]
+EXTRA_WGET_ARGS = [
+    ('--secure-protocol', 'PFS'),
+    ('--secure-protocol', 'TLSv1_1'),
+    ('--secure-protocol', 'TLSv1_2'),
+    ()
+]
+BANNED_LIST = []
+with open('words_alpha.txt', 'r') as f:
+    WORDS = [s.strip() for s in f]
 TRACKER_ID = 'gooblog'
 TRACKER_HOST = 'legacy-api.arpa.li'
 MULTI_ITEM_SIZE = 100
 
 
-def make_user_agent():
-    return random.choice(USER_AGENTS).format(
-        c1=random.randint(125, 143),
-        c2=random.randint(6420, 7500),
-        c3=random.randint(0, 200),
-        e2=random.randint(2530, 3665),
-        e3=random.randint(0, 200)
+def check_user_agent(user_agent):
+    print('Trying user-agent', user_agent)
+    returned = subprocess.run(
+        [
+            WGET_AT,
+            '-U', user_agent,
+            '--host-lookups', 'dns',
+            '--hosts-file', '/dev/null',
+            '--resolvconf-file', '/dev/null',
+            '--dns-servers', '9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10',
+            '--output-document', '-',
+            '--max-redirect', '0',
+            '--timeout', '5',
+            '--save-headers',
+            '--no-check-certificate',
+            '--header', 'Accept-Language: ja-JP,ja;q=0.9',
+            'https://blog.goo.ne.jp/staffblog/e/0fa1124a1c46191c546de90826498b46'
+        ],
+        timeout=60,
+        capture_output=True
     )
+    return b'ERROR 403' not in returned.stderr
+
+
+def make_random_user_agent():
+    return ''.join(random.choices(
+        string.digits+string.ascii_letters+' ;/.-_()',
+        k=random.randint(12, 40)
+    ))
+
+
+def make_dictionary_user_agent():
+    string = ''
+    used_bracket = False
+    chosen = None
+    for _ in range(random.randint(3, 9)):
+        if chosen is not None:
+            string += chosen
+            if chosen == ') ':
+                used_bracket = False
+            elif chosen == ' (':
+                assert not used_bracket
+                used_bracket = True
+        string += random.choice(WORDS)
+        concat = list(zip(*{
+            ' ': 1,
+            '; ': 0.2,
+            '/': 0.3,
+            '.': 0.1,
+            (' (' if not used_bracket else ') '): 0.3,
+            '-': 0.3
+        }.items()))
+        chosen = random.choices(concat[0], weights=concat[1], k=1)[0]
+    if used_bracket:
+        string += ')'
+    if random.random() < 0.7:
+        string = string.title()
+    return string
+
+
+def make_user_agent_attempts(func, tries=10):
+    for _ in range(tries):
+        user_agent = func()
+        if check_user_agent(user_agent):
+            return user_agent
+
+
+def make_list_user_agent():
+    random.shuffle(USER_AGENTS)
+    for template in USER_AGENTS:
+        if template in BANNED_LIST:
+            continue
+        user_agent = template.format(
+            c1=random.randint(125, 143),
+            c2=random.randint(6420, 7500),
+            c3=random.randint(0, 200),
+            e2=random.randint(2530, 3665),
+            e3=random.randint(0, 200)
+        )
+        if not check_user_agent(user_agent):
+            BANNED_LIST.append(template)
+            continue
+        return user_agent
+
+
+def make_user_agent():
+    for func in (
+        make_list_user_agent,
+        functools.partial(make_user_agent_attempts, make_dictionary_user_agent),
+        functools.partial(make_user_agent_attempts, make_random_user_agent)
+    ):
+        user_agent = func()
+        if user_agent:
+            return user_agent
 
 
 ###########################################################################
@@ -138,27 +237,9 @@ class CheckIP(SimpleTask):
                 raise Exception(
                     'Are you behind a firewall/proxy? That is a big no-no!')
 
-            returned = subprocess.run(
-                [
-                    WGET_AT,
-                    '-U', make_user_agent(),
-                    '--host-lookups', 'dns',
-                    '--hosts-file', '/dev/null',
-                    '--resolvconf-file', '/dev/null',
-                    '--dns-servers', '9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10',
-                    '--output-document', '-',
-                    '--max-redirect', '0',
-                    '--timeout', '5',
-                    '--save-headers',
-                    '--no-check-certificate',
-                    '--header', 'Accept-Language: ja-JP,ja;q=0.9',
-                    'https://blog.goo.ne.jp/staffblog/e/0fa1124a1c46191c546de90826498b46'
-                ],
-                timeout=60,
-                capture_output=True
-            )
-            if b'ERROR 403' in returned.stderr:
-                raise Exception('Looks like your IP is banned.')
+        user_agent = make_user_agent()
+        if user_agent is None:
+            item.log_output('Unable to find a working user-agent.')
 
         # Check only occasionally
         if self._counter <= 0:
@@ -332,7 +413,8 @@ class WgetArgs(object):
             '--warc-dedup-url-agnostic',
             '--warc-compression-use-zstd',
             '--warc-zstd-dict-no-include',
-            '--header', 'Accept-Language: ja-JP,ja;q=0.9'
+            '--header', 'Accept-Language: ja-JP,ja;q=0.9',
+            *random.choice(EXTRA_WGET_ARGS)
         ]
         dict_data = ZstdDict.get_dict()
         with open(os.path.join(item['item_dir'], 'zstdict'), 'wb') as f:
