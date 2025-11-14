@@ -78,7 +78,7 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251114.03'
+VERSION = '20251114.04'
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
@@ -112,26 +112,34 @@ MULTI_ITEM_SIZE = 100
 
 def check_user_agent(user_agent):
     print('Trying user-agent', user_agent)
-    returned = subprocess.run(
-        [
-            WGET_AT,
-            '-U', user_agent,
-            '--host-lookups', 'dns',
-            '--hosts-file', '/dev/null',
-            '--resolvconf-file', '/dev/null',
-            '--dns-servers', '9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10',
-            '--output-document', '-',
-            '--max-redirect', '0',
-            '--timeout', '5',
-            '--save-headers',
-            '--no-check-certificate',
-            '--header', 'Accept-Language: ja-JP,ja;q=0.9',
-            'https://blog.goo.ne.jp/staffblog/e/0fa1124a1c46191c546de90826498b46'
-        ],
-        timeout=60,
-        capture_output=True
-    )
-    return b'ERROR 403' not in returned.stderr
+    tries = 0
+    while tries < 20:
+        returned = subprocess.run(
+            [
+                WGET_AT,
+                '-U', user_agent,
+                '--host-lookups', 'dns',
+                '--hosts-file', '/dev/null',
+                '--resolvconf-file', '/dev/null',
+                '--dns-servers', '9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10',
+                '--output-document', '-',
+                '--max-redirect', '0',
+                '--timeout', '5',
+                '--save-headers',
+                '--no-check-certificate',
+                '--header', 'Accept-Language: ja-JP,ja;q=0.9',
+                'https://blog.goo.ne.jp/staffblog/e/0fa1124a1c46191c546de90826498b46'
+            ],
+            timeout=60,
+            capture_output=True
+        )
+        if returned.stdout.startswith(b'HTTP/1.1 200 OK'):
+            return True
+        elif b'ERROR 403' in returned.stderr:
+            return False
+        tries += 1
+        time.sleep(min(1.5**tries, 600))
+    return False
 
 
 def make_random_user_agent():
