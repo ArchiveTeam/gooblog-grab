@@ -78,7 +78,7 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20251114.01'
+VERSION = '20251114.02'
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{c1}.0.{c2}.{c3} Safari/537.36',
@@ -240,6 +240,7 @@ class CheckIP(SimpleTask):
         user_agent = make_user_agent()
         if user_agent is None:
             item.log_output('Unable to find a working user-agent.')
+            raise Exception('Unable to find a working user-agent.')
 
         # Check only occasionally
         if self._counter <= 0:
