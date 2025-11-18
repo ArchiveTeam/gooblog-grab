@@ -221,6 +221,9 @@ allowed = function(url, parenturl)
           match = string.gsub(match, "/[ecmd]m?t?/([0-9a-f]+)$", ":%1")
         end
       end
+      if item_type == "m" and type_ == "m" then
+        type_ = "m2"
+      end
       local new_item = type_ .. ":" .. match
       if new_item ~= item_name
         and not ids[string.lower(string.match(match, "([^:]+)$"))] then
